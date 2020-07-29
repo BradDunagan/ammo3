@@ -1,0 +1,295 @@
+Here (and subdirectories) I am trying to update ammo.js to bullet3.
+
+In directory bullet-a -
+
+	Build bullet with emscripten.
+
+	$ git clone https://github.com/bulletphysics/bullet3.git
+
+	$ cd bullet3
+
+	It appears, from CMakeLists.txt, that the existing build3 subdirectory 
+	here is used when building PyBulet.  Therefore ignoring the existing 
+	build3 subdirectory.
+
+	Looking at 
+
+		build_cmake_pybullet_double.sh
+
+	It -
+
+		-	deletes file CMakeCache.txt (if it exists)
+
+		-	makes directory build_cmake
+
+		-	cd to build_cmake
+
+		-	runs cmake -
+
+			cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
+
+		-	runs make -
+
+			make -j $(command nproc 2>/dev/null || echo 12) || exit 1
+			
+
+	First doing a regular CMake build (without emscripten) in -
+
+		~/dev/ammo3/bullet-a/bullet3-build
+
+	Using ccmake. Modifying the cmake command in build_cmake_pybullet_double.sh -
+
+	$ ccmake -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release ../bullet3
+
+	Set 
+
+		CMAKE_INSTALL_PREFIX		local-install
+
+	Says OPENGL NOT FOUND.  Generating anyway ...
+
+	Nothing to indicate any errors. 
+
+	$ cmake --build .				//	Just make might work also.
+
+	Takes a while.
+
+	Warnings. No errors. Next time might want to not include demos, exmples, tests and >> make-stdout.txt.
+
+	(Still in directory ~/dev/ammo3/bullet-a/bullet-build.)
+
+	Output in the src directory.  For example -
+
+		./src/Bullet3Collision
+
+	$ cmake --install .
+
+	Installed to directory -
+
+		./local-install
+
+
+	Emscripten build.  Make/Go-to directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	Going by -
+
+		https://gist.github.com/WesThorburn/00c47b267a0e8c8431e06b14997778e4
+
+	Activate emscripten -
+
+	$ pushd ~/dev/emsdk
+
+	$ ./emsdk activate latest
+
+	$ source emsdk_env.sh
+
+	$ popd
+
+	Create environment variable -
+
+	$ export CMAKE_TOOLCHAIN_FILE=/home/brad/dev/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+
+	Verify the variable -
+
+	$ printenv | grep CMAKE
+
+	Still in directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	Build -
+
+	$ emcmake ccmake -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release ../bullet3
+
+	Set 
+
+		CMAKE_INSTALL_PREFIX		local-install
+
+	Says 
+
+		BSD?
+
+		OPENGL FOUND
+
+		null
+
+	Generating ...
+
+	Nothing to indicate any errors. 
+
+	$ cmake --build . --verbose
+
+	Errors while compiling what appear to be example/demo stuff.
+
+	Reconfiguring to exclude anything that looks like example, demo etc..
+
+	$ emcmake ccmake -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release ../bullet3
+
+	Disable double precision to avoid link errors -
+
+		Even though, in the steps below, I tried changing the functions 
+		mentioned in the link errors to return double (in the idl file), to 
+		match that of the function compiled here, the error message says 
+		returning float (says the function in glue.cpp is rturning float).
+
+	$ emcmake ccmake -DUSE_DOUBLE_PRECISION=OFF -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=Release ../bullet3
+
+	$ cmake --build . --verbose
+
+	Noticed no errors.
+
+	$ cmake --install .
+
+	In ./local-install/lib -
+
+		drwxrwxr-x 3 brad brad    4096 Jul 22 11:58 cmake
+		-rw-r--r-- 1 brad brad   73956 Jul 22 11:51 libBullet2FileLoader.a
+		-rw-r--r-- 1 brad brad  101600 Jul 22 11:52 libBullet3Collision.a
+		-rw-r--r-- 1 brad brad    4802 Jul 22 11:55 libBullet3Common.a
+		-rw-r--r-- 1 brad brad   95912 Jul 22 11:51 libBullet3Dynamics.a
+		-rw-r--r-- 1 brad brad   41736 Jul 22 11:52 libBullet3Geometry.a
+		-rw-r--r-- 1 brad brad 1381066 Jul 22 11:51 libBullet3OpenCL_clew.a
+		-rw-r--r-- 1 brad brad 1155504 Jul 22 11:54 libBulletCollision.a
+		-rw-r--r-- 1 brad brad  866568 Jul 22 11:55 libBulletDynamics.a
+		-rw-r--r-- 1 brad brad  104746 Jul 22 11:52 libBulletInverseDynamics.a
+		-rw-r--r-- 1 brad brad  762280 Jul 22 11:53 libBulletSoftBody.a
+		-rw-r--r-- 1 brad brad  135292 Jul 22 11:55 libLinearMath.a
+		drwxrwxr-x 2 brad brad    4096 Jul 22 11:58 pkgconfig
+
+	Next. Going by ~/dev/ammo.js/make.py ...
+
+	Need the glue.
+
+	Popen ( [ emscripten.PYTHON, 
+			  os.path.join ( EMSCRIPTEN_ROOT, 'tools', 'webidl_binder.py' ), 
+			  os.path.join ( this_dir, 'ammo.idl' ), 
+			  'glue'] )
+		.communicate()
+
+	Which translates to a process running -
+
+		python ~/dev/emsdk/upstream/emscripten/tools/webidl_binder.py  ~/dev/ammo.js/ammo.idl glue
+
+	Which produces -
+
+		glue.cpp
+		glue.js
+
+
+	Still in directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	Here we want to run -
+
+	$ python ~/dev/emsdk/upstream/emscripten/tools/webidl_binder.py  ../ammo-a/ammo.idl glue
+
+	Now have glue.cpp, glue.js.
+
+	Build glue.o -
+
+		args = ['-I../src', '-c']
+		for include in INCLUDES:
+		  args += ['-include', include]
+		emscripten.emcc('glue.cpp', args, 'glue.o')
+
+	$ emcc glue.cpp -Ilocal-install/include/ -c glue.o
+
+	That does not work. 
+
+	Created make-glue.py -
+
+	Notes on the idl file -
+
+		See ammo-a/ammo.idl.
+
+		Classes that abstract can be interfaced without any constructor. This will prevent there being
+		any attempt to instantiate such abstract classes. For example, btDispatcher.
+
+	Still in directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	$ python make-glue.py
+
+	Which produces -
+
+		glue.o
+
+	Still in directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	To link and wrap -
+
+	$ python link-wrap.py
+
+	Now have -
+
+		ammo.wasm.js
+		ammo.wasm.wasm
+
+	Woohoo!
+
+	They seem to work in the app.
+
+	Now adding more interfaces to the idl.
+
+	Still in directory -
+
+		~/dev/ammo3/bullet-a/bullet-build-emscripten
+
+	$ vi ../ammo-a/ammo.idl
+
+	$ python ~/dev/emsdk/upstream/emscripten/tools/webidl_binder.py  ../ammo-a/ammo.idl glue
+
+	$ python make-glue.py
+
+	$ python link-wrap.py
+
+	$ cp ammo.wasm.* /media/sf_2/
+
+
+git -
+
+	In directory -
+
+		~/dev/ammo3
+
+	Where this file is located.
+
+	$ git init
+
+	See -
+
+		https://github.blog/2016-02-01-working-with-submodules/
+
+	Added my fork of bullet3 located in -
+
+		bullet-a/bullet3
+
+	as a submodule -
+
+	$ git submodule add https://github.com/BradDunagan/bullet3 bullet-a/bullet3
+
+
+	Made this a githb repository -
+
+	$ git add .
+
+	$ git commit
+
+	...
+
+
+
+
+
+
+
+
+
+
+
+

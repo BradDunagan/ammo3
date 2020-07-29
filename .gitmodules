@@ -1,0 +1,3 @@
+[submodule "bullet-a/bullet3"]
+	path = bullet-a/bullet3
+	url = https://github.com/BradDunagan/bullet3

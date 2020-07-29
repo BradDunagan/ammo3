@@ -1,0 +1,225 @@
+// Linear Math
+
+interface btVector3 {
+  void btVector3();
+  void btVector3(float x, float y, float z);
+  float length();
+  float x();
+  float y();
+  float z();
+  void setX(float x);
+  void setY(float y);
+  void setZ(float z);
+  void setValue(float x, float y, float z);
+  void normalize();
+  [Value] btVector3 rotate([Ref] btVector3 wAxis, float angle);
+  float dot([Ref] btVector3 v);
+  [Operator="*=", Ref] btVector3 op_mul(float x);
+  [Operator="+=", Ref] btVector3 op_add([Ref] btVector3 v);
+  [Operator="-=", Ref] btVector3 op_sub([Ref] btVector3 v);
+};
+
+interface btVector4 {
+  void btVector4();
+  void btVector4(float x, float y, float z, float w);
+  float w();
+  void setValue(float x, float y, float z, float w);
+};
+
+btVector4 implements btVector3;
+
+interface btQuadWord {
+  float x();
+  float y();
+  float z();
+  float w();
+  void setX(float x);
+  void setY(float y);
+  void setZ(float z);
+  void setW(float w);
+};
+
+interface btQuaternion {
+  void btQuaternion(float x, float y, float z, float w);
+  void setValue(float x, float y, float z, float w);
+  void setEulerZYX(float z, float y, float x);
+  void setRotation([Ref] btVector3 axis, float angle);
+  void normalize();
+  float length2();
+  float length();
+  float dot([Ref] btQuaternion q);
+  [Value] btQuaternion normalized();
+  [Value] btVector3 getAxis();
+  [Value] btQuaternion inverse();
+  float getAngle();
+  float getAngleShortestPath();
+  float angle([Ref] btQuaternion q);
+  float angleShortestPath([Ref] btQuaternion q);
+  [Operator="+=", Ref] btQuaternion op_add([Ref] btQuaternion q);
+  [Operator="-=", Ref] btQuaternion op_sub([Ref] btQuaternion q);
+  [Operator="*=", Ref] btQuaternion op_mul(float s);
+  [Operator="*=", Ref] btQuaternion op_mulq([Ref] btQuaternion q);
+  [Operator="/=", Ref] btQuaternion op_div(float s);
+  [Const, Ref] btQuaternion getIdentity();
+  [Value] btVector3	quatRotate ( [Const, Ref] btQuaternion rotation, [Const, Ref] btVector3 v );
+};
+
+
+btQuaternion implements btQuadWord;
+
+interface btMatrix3x3 {
+  void setEulerZYX(float ex, float ey, float ez);
+  void getRotation([Ref] btQuaternion q);
+  [Value] btVector3 getRow(long y);
+};
+
+interface btTransform {
+  void btTransform();
+  void btTransform([Ref] btQuaternion q, [Ref] btVector3 v);
+
+  void setIdentity();
+  void setOrigin([Ref] btVector3 origin);
+  void setRotation([Ref] btQuaternion rotation);
+  [Ref] btVector3 getOrigin();
+  [Value] btQuaternion getRotation();
+  [Ref] btMatrix3x3 getBasis();
+  void setFromOpenGLMatrix(float[] m);
+  [Value] btTransform inverse();
+  [Operator="*=", Ref] btTransform op_mul([Ref] btTransform t);
+};
+
+
+// multi bodies (Featherstone)
+
+interface btMultiBody {
+  void btMultiBody ( long n_links, float mass, [Const, Ref] btVector3 inertia, boolean fixedBase, boolean canSleep, boolean deprecatedMultiDof );
+  void setupRevolute ( long i, float mass, [Const, Ref] btVector3 inertia, long parentIndex, [Const, Ref] btQuaternion rotParentToThis, [Const, Ref] btVector3 jointAxis, [Const, Ref] btVector3 parentComToThisPivotOffset, [Const, Ref] btVector3 thisPivotToThisComOffset, boolean disableParentCollision );
+  [Ref] btMultibodyLink getLink ( long index );
+  void setBaseCollider ( btMultiBodyLinkCollider collider );
+  btMultiBodyLinkCollider getBaseCollider();
+  long getParent ( long link_num );
+  long getNumLinks();
+  long getNumDofs();
+  void setWorldToBaseRot ( [Const, Ref] btQuaternion rot );
+  double getJointPos ( long i );
+  double getJointVel ( long i );
+
+  void setJointPos ( long i, double q );
+  void setJointVel ( long i, double qdot );
+  void clearForcesAndTorques();
+  void addJointTorque ( long i, float Q );
+  double getJointTorque ( long i );
+  void setNumLinks ( long numLinks );
+  float getAngularDamping();
+
+  void setBaseWorldTransform ( [Const, Ref] btTransform baseWorldTransform );
+
+  void finalizeMultiDof();
+  void setCanSleep ( boolean canSleep );
+  void setHasSelfCollision ( boolean hasSelfCollision );
+  void setUseGyroTerm ( boolean useGyro );
+  void setLinearDamping ( float damping );
+  void setAngularDamping ( float damping );
+  [Const, Ref] btQuaternion getWorldToBaseRot();
+  [Const, Ref] btVector3 getBasePos();
+  [Const, Ref] btVector3 getRVector ( long i );
+  [Const, Ref] btQuaternion getParentToLocalRot ( long i );
+  void forwardKinematics();
+};
+
+interface btMultibodyLink {
+  void btMultibodyLink();
+  attribute btMultiBodyLinkCollider m_collider;
+};
+
+interface btMultiBodyLinkCollider {
+  void btMultiBodyLinkCollider ( btMultiBody multiBody, long link );
+  void setCollisionShape ( btCollisionShape shape );
+  void setWorldTransform ( [Const, Ref] btTransform worldTransform );
+};
+
+interface btMultiBodyConstraintSolver {
+  void btMultiBodyConstraintSolver();
+};
+
+interface btCollisionDispatcher {
+  void btCollisionDispatcher ( btCollisionConfiguration collisionConfiguration );
+};
+
+interface btDefaultCollisionConfiguration {
+  void btDefaultCollisionConfiguration();
+};
+
+interface btSimpleBroadphase {
+  //  maxProxies defaut 16384
+  //  overlappingPairCache default 0
+  void btSimpleBroadphase ( long maxProxies, btOverlappingPairCache overlappingPairCache );
+};
+
+interface btOverlappingPairCache {
+};
+
+interface btDispatcher {
+};
+
+interface btBroadphaseInterface {
+};
+
+interface btCollisionConfiguration {
+};
+
+interface btMultiBodyDynamicsWorld {
+  void btMultiBodyDynamicsWorld ( btDispatcher dispatcher, 
+								  btBroadphaseInterface pairCache, 
+								  btMultiBodyConstraintSolver constraintSolver, 
+								  btCollisionConfiguration collisionConfiguration );
+  void setGravity ( [Const, Ref] btVector3 gravity );
+  void addMultiBody ( btMultiBody body );
+  void addCollisionObject ( btCollisionObject collisionObject, long collisionFilterGroup, long collisionFilterMask );
+  void stepSimulation ( float timeStep, float maxSubSteps );
+};
+
+interface btBroadphaseProxy {
+  void btBroadphaseProxy();
+};
+
+interface btBoxShape {
+  void btBoxShape ( [Const, Ref] btVector3 boxHalfExtents );
+  void calculateLocalInertia ( float mass, [Ref] btVector3 inertiaDiag );
+};
+
+interface btCollisionShape {
+};
+
+interface btCollisionObject {
+  void btCollisionObject();
+};
+
+[Prefix="btInverseDynamics::"]
+interface MultiBodyTree {
+  void MultiBodyTree();
+  long calculateInverseDynamics ( [Const, Ref] vecx q, [Const, Ref] vecx u, [Const, Ref] vecx dot_u, vecx joint_forces );
+};
+
+[Prefix="btInverseDynamics::"]
+interface MultiBodyTreeCreator {
+};
+
+[Prefix="btInverseDynamics::"]
+interface btMultiBodyTreeCreator {
+  void btMultiBodyTreeCreator();
+  long createFromBtMultiBody ( [Const] btMultiBody btmb, [Const] boolean verbose );
+  MultiBodyTree CreateMultiBodyTree ( [Const, Ref] MultiBodyTreeCreator creator );
+};
+
+[Prefix="btInverseDynamics::"]
+interface vecx {
+  void vecx ( long size );
+  void set ( long i, float v );
+  float get ( long i );
+};
+
+
+
+
+
