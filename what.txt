@@ -280,7 +280,14 @@ git -
 
 	$ git commit
 
-	...
+	Created a repository on github -
+
+		https://github.com/BradDunagan/ammo3	
+
+	$ git remote add origin https://github.com/BradDunagan/ammo3.git
+
+	$ git push -u origin master
+
 
 
 
